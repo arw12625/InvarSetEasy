@@ -41,7 +41,8 @@ nt = n + N * m;
 
 %Decision variables for LP
 T = sdpvar(ngt,  nh, 'full');
-M = sdpvar(nt, nt, 'full');
+R = sdpvar(N * m, n, 'full');
+r = sdpvar(N * m, 1, 'full');
 gamma = sdpvar(1);
 
 % gamma is the reciprocal of the scaling applied to Omega
@@ -69,7 +70,6 @@ gh = zeros(ngt,1);
 gtild = zeros(ngt,1);
 gtild(1:nh) = h;
 gh(1:nh) =  sH;
-Ht = [H, zeros(nh, nt-n)];
 
 Gt(1:nh, 1:n) = H * A^N;
 for i = 1:N
@@ -85,17 +85,15 @@ end
 Gt((ngt - nf + 1):ngt, 1:n) = F;
 gh((ngt - nf + 1):ngt) = f + sF(:,1);
 
-identMat = [eye(n), zeros(n, nt - n)];
+Mmod = [eye(n); R];
 
 Constraints = [
-    T*Ht == Gt * M;
-    T*(h ) <= gamma * gh + gtild;
+    T*H == Gt * Mmod;
+    T*(h ) <= gamma * gh + gtild - Gt(:,(n+1):end) * r;
     T >= 0;
     gamma >= 0;
-    identMat * M == identMat;
 ];
-
-Options = sdpsettings('solver', 'gurobi', 'verbose', 1);
+Options = sdpsettings('solver', 'gurobi', 'verbose', 0);
 
 diagnostics = optimize(Constraints, Objective, Options);
 

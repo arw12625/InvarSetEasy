@@ -1,18 +1,15 @@
-function [diagnostics] = testStateDistControlInvariance(Omega, X, U, W, N, A, B, C)
-%testStateDistControlInvariance Test if Omega is such that the
-%N backward step set computed is control invariant with disturbance.
+function [beta, diagnostics] = controlInvariantGrowthLP(Omega, X, U, N, A, B)
+%controlInvariantGrowthLP finds a scaling of Omega so that the
+%N backward step set computed is control invariant.
 %   Omega - initial set, seed
 %   X - State space / constraints
 %   U - Input space
-%   W - Disturbance space
 %   N - number of steps
 %   A - non-singular state-transition matrix
 %   B - input matrix
-%   C - disturbance matrix
 %
-%   This is motivated by Theorem 2 in 'Computing control invariant sets in high dimension is easy'
-%   I need to finish a formal proof that this method with disturbance is correct
-%   Omega,X,U,W are convex polytopes each containing the origin
+%   This is taken from Theorem 2 in 'Computing control invariant sets in high dimension is easy'
+%   Omega,X,U are convex polytopes each containing the origin
 %       They should have halfspace representations in MPT
 %   This function requires YALMIP
 %
@@ -41,30 +38,19 @@ nt = n + N * m;
 
 %Decision variables for LP
 T = sdpvar(ngt,  nh, 'full');
-M = sdpvar(nt, nt, 'full');
+R = sdpvar(N * m, n, 'full');
+r = sdpvar(N * m, 1, 'full');
+gamma = sdpvar(1);
 
-% Compute effect of disturbance through offsets
-dH = zeros(size(F,1), N+1);
-dF = zeros(size(F,1), N+1);
-sF = zeros(size(F,1), N+1);
-for i = 1:(N+1)
-    dH(:,i) = computeDisturbanceOffsets(Omega,W,i-1,A,C);
-    dF(:,i) = computeDisturbanceOffsets(X,W,i-1,A,C);
-    if i > 1
-        sF(:,i) = sF(:,i-1) + dF(:,i);
-    elseif i == 1
-        sF(:,i) = dF(:,i);
-    end
-end
-sH = sum(dH,2);
+% gamma is the reciprocal of the scaling applied to Omega
+% so to obtain the largest invariant set, gamma must be minimized
+Objective = gamma;
 
 %Constraints for LP
 Gt = zeros(ngt, nt);
 gh = zeros(ngt,1);
 gtild = zeros(ngt,1);
 gtild(1:nh) = h;
-gh(1:nh) =  sH;
-Ht = [H, zeros(nh, nt-n)];
 
 Gt(1:nh, 1:n) = H * A^N;
 for i = 1:N
@@ -75,23 +61,25 @@ for i = 1:N
         Gt(nh + ng * N + (i-1)*nf + (1:nf), n + (j - 1) * m + (1:m)) = F * A^(j-i) * B;
     end
     gh(nh + (i-1)*ng + (1:ng)) = g;
-    gh(nh + N * ng + (i-1)*nf + (1:nf)) = f + sF(:,N - i + 2);
+    gh(nh + N * ng + (i-1)*nf + (1:nf)) = f;
 end
 Gt((ngt - nf + 1):ngt, 1:n) = F;
-gh((ngt - nf + 1):ngt) = f + sF(:,1);
+gh((ngt - nf + 1):ngt) = f;
 
-identMat = [eye(n), zeros(n, nt - n)];
+Mmod = [eye(n); R];
 
 Constraints = [
-    T*Ht == Gt * M;
-    T*(h ) <= gh + gtild;
+    T*H == Gt * Mmod;
+    T*h <= gamma * gh + gtild - Gt(:,(n+1):end) * r;
     T >= 0;
-    identMat * M == identMat;
+    gamma >= 0;
 ];
+
 
 Options = sdpsettings('solver', 'gurobi', 'verbose', 1);
 
-diagnostics = optimize(Constraints, [], Options);
-
+diagnostics = optimize(Constraints, Objective, Options);
+beta = value(gamma);
+value(R)
 end
 

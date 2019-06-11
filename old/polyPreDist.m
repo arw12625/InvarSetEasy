@@ -13,8 +13,6 @@ d = computeDisturbanceOffsets(s,W,1,A,C);
 
 inputVertexPolys = Polyhedron(size(Uv,1));
 
-[s.b, d]
-
 for i = 1:size(Uv,1)
     distPoly = Polyhedron('A', s.A, 'b', s.b + d);
     inputVertexPolys(i) = invAffineMap(distPoly,A,B*Uv(i,:)');

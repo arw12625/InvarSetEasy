@@ -1,27 +1,26 @@
-function [d] = computeDisturbanceOffsets(X, W, N, A, C)
+function [d] = computeDisturbanceOffsets(plsys, Omega)
 %computeDisturbanceOffsets Computes the halfspace offsets that represent
 %the effect of the disturbance upon Pre operation
-%   X - State space / constraints
-%   W - Disturbance space
-%   N - number of steps
-%   A - non-singular state-transition matrix
-%   C - disturbance matrix
+%   plsys - polytopic linear system
+%   Omega - polytope to compute pre of
 %
 %   d - disturbance offset
 
-F = X.A;
-f = X.b;
-E = W.A;
-e = W.b;
+N = 1
+
+F = plsys.X.A;
+f = plsys.X.b;
+E = plsys.W.A;
+e = plsys.W.b;
 
 if N <= 0
     d = zeros(size(F,1), 1);
     return;
 end
 
-w = sdpvar(size(C,2),1,'full');
+w = sdpvar(size(plsys.E,2),1,'full');
 
-objective = -F * A^(N-1) * C * w;
+objective = -F * plsys.A^(N-1) * plsys.E * w;
 
 constraints = [ E * w <= e ];
 

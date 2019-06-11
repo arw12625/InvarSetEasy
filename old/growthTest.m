@@ -47,9 +47,9 @@ plot(alphaS * Omega, 'Color', 'g');
 x = sdpvar(n, 1, 'full');
 Constraints =  nStepHullConstraints(Omega, X, U, N, A, B, alphaS, x);
 
-testNum = 100;
+testNum = 50;
 cols = zeros(testNum,1);
-testPoints = 4 * rand(2,testNum) - 2;
+testPoints = 6 * rand(2,testNum) - 2;
 
 for i = 1:testNum
 

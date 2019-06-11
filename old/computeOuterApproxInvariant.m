@@ -1,4 +1,4 @@
-function [outerInvar] = computeOuterApproxInvariant(X,U,N,A,B);
+function [outerInvar] = computeOuterApproxInvariant(X,U,N,A,B)
 
 %{
 t = X;

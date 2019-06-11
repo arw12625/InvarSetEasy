@@ -1,22 +1,20 @@
 %% Compute invariant set scaling
 
 n = 2; %System Dimension
-Omega = Polyhedron.unitBox(n);
+Omega = 2 * Polyhedron.unitBox(n);
 X = 5 * Polyhedron.unitBox(n);
 U = 0.6 * Polyhedron.unitBox(n);
-W = 0.1 * Polyhedron.unitBox(n);
+W = 0.05 * Polyhedron.unitBox(n);
 
 theta = pi / 4;
 A = 1.1 * [cos(theta), sin(theta); -sin(theta), cos(theta)];
 B = eye(n);
 C = eye(n);
 
-N = 8;
+N = 2;
 
-figure()
-hold on;
 
-[beta, diag, sF, sH] = controlInvariantDistGrowthLP(Omega, X, U, W, N, A, B, C);
+[beta, diag, sF, sH] = controlInvariantDistGrowthLPMOD(Omega, X, U, W, N, A, B, C);
 beta
 diag
 
@@ -24,6 +22,8 @@ alphaS = 1 / beta;
 
 %% Compute and plot the scaled backwards step sets explicitly
 
+figure()
+hold on;
 s = alphaS * Omega;
 S = Polyhedron(N);
 ver = [];
