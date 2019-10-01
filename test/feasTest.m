@@ -8,7 +8,15 @@ theta = pi / 4;
 A = 1.4 * [cos(theta), sin(theta); -sin(theta), cos(theta)];
 B = eye(2);
 
-N = 2; %Number of backwards steps to use
+N = 1; %Number of backwards steps to use
+
+
+Omega = Polyhedron.unitBox(n);
+X = 10 * Polyhedron.unitBox(n);
+U = Polyhedron.unitBox(n);
+
+A = 2 * [1,0;0,1];
+B = [1,1;0,1];
 
 testStateControlInvariance(Omega, X, U, N, A, B)
 
