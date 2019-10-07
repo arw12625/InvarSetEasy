@@ -6,10 +6,10 @@ function [d] = computeDisturbanceOffsets(plsys, Omega)
 %
 %   d - disturbance offset
 
-N = 1
+N = 1;
 
-F = plsys.X.A;
-f = plsys.X.b;
+F = Omega.A;
+f = Omega.b;
 E = plsys.W.A;
 e = plsys.W.b;
 
