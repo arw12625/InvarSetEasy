@@ -16,7 +16,6 @@ function [sequences, A_seq, f_seq] = computeSwitchedSequence(A,f,N)
 %       A_seq(s) = A{2} * A{1} * A{0} * A{1}
 %       f_seq(s) = f{2} + A{2} * f{1} + A{2} * A{1} * f{0} + A{2} * A{1} * A{0} * f{1} 
 %
-
 sequences = cell(N+1,1);
 sequences{1} = {''};
 n = size(A{1},1);

@@ -3,7 +3,7 @@ function [pre_s] = polySwitchedLinPre(pslsys,s)
     % pslsys - polytopic switched linear system
     % s - set to compute pre of
 
-poly = s;
+poly = pslsys.X;
 
 %compute pre under each mode and intersect
 for i = 1:pslsys.ns

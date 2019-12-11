@@ -18,6 +18,11 @@ if N <= 0
     return;
 end
 
+if sum(sum(abs(-F * plsys.A^(N-1) * plsys.E))) == 0
+    d = zeros(size(F,1), 1);
+    return;
+end
+
 w = sdpvar(size(plsys.E,2),1,'full');
 
 objective = -F * plsys.A^(N-1) * plsys.E * w;

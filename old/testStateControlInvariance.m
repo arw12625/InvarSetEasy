@@ -61,6 +61,11 @@ gt((ngt - nf + 1):ngt) = f;
 
 Mmod = [eye(n); R];
 
+H
+h
+Gt
+gt
+
 Constraints = [
     T*H == Gt * Mmod;
     T*h <= gt;

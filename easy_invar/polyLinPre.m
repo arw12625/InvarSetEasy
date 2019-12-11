@@ -3,19 +3,24 @@ function [pre_s] = polyLinPre(plsys,s)
     % plsys - polytopic linear system
     % s - set to compute pre of
 
-Uv = plsys.U.V;
-
 d = computeDisturbanceOffsets(plsys,s);
 
-inputVertexPolys = Polyhedron(size(Uv,1));
+Ax = plsys.X.A;
+bx = plsys.X.b;
+As = s.A;
+bs = s.b;
+Au = plsys.U.A;
+bu = plsys.U.b;
 
-for i = 1:size(Uv,1)
-    distPoly = Polyhedron('A', s.A, 'b', s.b + d);
-    inputVertexPolys(i) = invAffineMap(distPoly,plsys.A,plsys.B*Uv(i,:)');
-end
+n = size(Ax,2);
+m = size(Au,2);
 
-pre_s = PolyUnion(inputVertexPolys).convexHull();
-pre_s = intersect(pre_s, plsys.X);
+H = [As * plsys.A, As * plsys.B, bs + d;
+     Ax, zeros(size(Ax,1), m), bx; 
+     zeros(size(Au,1), n), Au, bu];
+
+lift_pre_s = Polyhedron('H', H);
+pre_s = lift_pre_s.projection(1:n);
 
 end
 

@@ -135,10 +135,17 @@ for j = 1:size(total_sequences, 1)
     
     % combine the blocks into constraint matrices with the correct
     % dimension by padding as necessary
+    Gx = [cell2mat(target_G_x); zeros(N * nUcon, n)];
+    Gu = [cell2mat(target_G_u); kron(eye(N),pslsys.U.A)];
+    Gw = [cell2mat(target_G_w); zeros(N * nUcon, N * l)];
+    g = [cell2mat(target_g);  repmat(pslsys.U.b, N, 1)];
+    
+    %{
     Gx = [cell2mat(target_G_x); zeros(N * (nUcon + nWcon), n)];
     Gu = [cell2mat(target_G_u); kron(eye(N),pslsys.U.A); zeros(N * nWcon, N * m)];
     Gw = [cell2mat(target_G_w); zeros(N * nUcon, N * l); kron(eye(N),pslsys.W.A)];
     g = [cell2mat(target_g);  repmat(pslsys.U.b, N, 1); repmat(pslsys.W.b, N, 1)];
+    %}
     
     gu_offset = Gu * uc_inst;
     

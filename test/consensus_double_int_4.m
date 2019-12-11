@@ -3,37 +3,44 @@
 % The switched affine dynamics are defined by
 %       x+ = A{sigma} * x + B{sigma} * u + E{sigma} * w + f{sigma}
 N = 8; % number of steps
-d = 4; % number of UAVs
+d = 3; % number of UAVs
 n = 2 * d; % dimension of state space
 m = 1; % dimension of input space
 l = d; % dimension of disturbance space
 ns = 2; % number of switching modes
 
 Kh = 0.25;
-Kv = 0.9;
+Kv = 1;
 
 topo = cell(ns,1);
-topo{1} = [0, 1, 1, 1;
-           1, 0, 1, 0;
-           1, 1, 0, 1;
-           1, 0, 1, 0;];
-topo{2} = [0, 1, 0, 1;
-           1, 0, 1, 1;
-           0, 1, 0, 1;
-           1, 1, 1, 0;];
+topo{1} = [0, 1, 0;
+           0, 0, 1;
+           1, 0, 0];
+topo{2} = [0, 0, 1;
+           1, 0, 0;
+           0, 1, 0];
 %topo{2} = topo{1};
+
+%{
+%orig
+Mh = 10;
+offset = 0;
+Mv = 5;
+uH = 2;
+wH = 0.1;
 %}
 
-Mh = 10;
+%new
+Mh = 25;
+offset = 0;
 Mv = 10;
-delta = 10;
-uH = 10;
-wH = 0.01;
+uH = 5;
+wH = 0.1;
 
 A = cell(ns,1); % A matrices for each mode
 for mode = 1:ns
     degrees = (sum(topo{mode}, 1));
-    Aol = kron(eye(d), [1,1;0,0.99]);
+    Aol = kron(eye(d), [1,1;0,1]);
     Acl = zeros(size(Aol));
     for i = 1:d
         scale = 1 / (degrees(i) + 1);
@@ -61,6 +68,7 @@ end
 E = cell(ns,1); % E matrices for each mode
 for i = 1:ns
     E{i} = kron(eye(d),[0;1]);
+    %E{i} = zeros(n,0);
 end
 
 f = cell(ns,1); % f vectors for each mode
@@ -106,28 +114,21 @@ X = Polyhedron(Apos, bpos);% & kron(eye(d), [Mh, 0; 0, Mv]) * Polyhedron.unitBox
 U = uH * Polyhedron.unitBox(m); % the input space
 W = wH * Polyhedron.unitBox(l); % the disturbance space
 
-Omega =  (kron(eye(d), [1, 0; 0, 0.25]) * Polyhedron.unitBox(n)) & (0.25 * near_polyv) & (1 * near_poly); % the seed set
+Omega =  offset*repmat([1;0],d,1) + (kron(eye(d), [1, 0; 0, 0.25]) * Polyhedron.unitBox(n)) & (0.25 * near_polyv) & (1 * near_poly); % the seed set
 %Omega = (0.04 * near_polyv) & (0.12 * near_poly); % the seed set
 
 pslsys = PolySwitchLinSys(A,X,B,U,E,W,f); % class representing the system
 
 yalmipOptions = sdpsettings('verbose', 1); % options for the LP solver
 
-Ch = [-1, 0, 1, 0, 0, 0, 0, 0;
-      -1, 0, 0, 0, 1, 0, 0, 0;
-      -1, 0, 0, 0, 0, 0, 1, 0];
-Cv = [0, -1, 0, 1, 0, 0, 0, 0;
-      0, -1, 0, 0, 0, 1, 0, 0;
-      0, -1, 0, 0, 0, 0, 0, 1];
-[max(sum(abs(Ch * A{1}^10), 2)), max(sum(abs(Cv * A{1}^10), 2))]
-%[max(sum(abs(Ch * A{2}^10), 2)), max(sum(abs(Cv * A{2}^10), 2))]
-
 %% j
 
-multset = [5];
+% 4 8
+multset = [4];
 satind = zeros(size(multset));
+elap_time = zeros(size(multset));
 for i = 1:length(multset)
-    
+    start_time = cputime;
     mult = multset(i);
     % determine if the seed set generates an invariant set with respect to the
     % system dynamics
@@ -135,6 +136,7 @@ for i = 1:length(multset)
     if diagnostics.problem == 0
         satind(i) = 1;
     end
+    elap_time(i) = cputime - start_time;
 end
 
 [min(multset(find(satind))), max(multset(find(satind)))]
@@ -153,3 +155,35 @@ if diagnostics.problem == 0
     end
     %}
 end
+
+
+%% struct
+
+st.N = N; % number of steps
+st.d = d; % number of UAVs
+st.n = n; % dimension of state space
+st.m = m; % dimension of input space
+st.l = l; % dimension of disturbance space
+st.ns = ns; % number of switching modes
+
+st.Kh = Kh;
+st.Kv = Kv;
+
+st.topo = topo;
+
+st.uH = uH;
+st.wH = wH;
+
+st.pslsys = pslsys;
+
+st.Omega = Omega;
+st.scale = scale;
+st.multset = multset;
+st.satind = satind;
+st.diagnostics = diagnostics;
+st.elap_time = elap_time;
+
+%% save
+
+filename = "data/consensus/switch/1.mat";
+%save(filename, 'st');
