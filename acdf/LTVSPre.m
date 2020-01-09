@@ -47,8 +47,8 @@ TA = target.A;
 WA = W.A;
 Wb = W.b;
 
-size(TA)
-size(E)
+%size(TA)
+%size(E)
 if sum(sum(abs(-TA * E))) == 0
     d = zeros(size(TA,1), 1);
     return;

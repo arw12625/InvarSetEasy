@@ -16,7 +16,15 @@ function [isRecurrent, affineController] = testAffineRecurrence(sys,initTargetSe
     yalmipOptions = sdpsettings('verbose', 1); % options for the LP solver
     [diagnostics, affineController] = computeAffineController(csys, initialConditions, admissibleTrajectories, yalmipOptions);
     
-    isRecurrent = 1 - diagnostics.problem;
+    if diagnostics.problem == 0
+        isRecurrent = 1;
+    else
+        isRecurrent = 0;
+        if diagnostics.problem ~= 1
+            disp("YALMIP ERROR: ");
+            disp(yalmiperror(diagnostics.problem));
+        end
+    end
     
 end
 

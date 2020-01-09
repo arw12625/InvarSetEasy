@@ -95,11 +95,11 @@ Omega = powerConstraints;
 % (Note technically this set computes the convex hull of the union 
 % of the sets pre^i(Omega) for i = 1:T which is slightly different)
 % If the system is recurrent then this set is invariant.
-preUnion = computePreUnion(sys, Omega, T);
+%preUnion = computePreUnion(sys, Omega, T);
 
 %%
 
 % Compute an outer approximation of the maximal invariant set by
 % iteratively applying pre to the safe set.
 % This method has trouble with numerical stability
-outerInvar = computeIteratedPre(sys, Xsafe, 5);
+%outerInvar = computeIteratedPre(sys, Xsafe, 5);
