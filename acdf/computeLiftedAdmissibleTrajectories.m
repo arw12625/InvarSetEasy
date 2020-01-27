@@ -25,15 +25,16 @@ l = sys.l;
 % Each partial switching sequence corresponds to a target constraint either
 % enforcing safety or reaching the target of Omega
 % These constraints are of the form
-%       Gx * x + Gu * u + Gw * w <= g
+%       Ax * x + Au * u + Aw * w <= b
+% Equality constraints are transformed into inequality constraints
 %
 % The following variables define maps from partial sequences to the
 % constraint matrices/vectors. They are initialized with the constraint
 % corresponding to the empty string ''.
-target_G_map_x = containers.Map('KeyType','char','ValueType','any');
-target_G_map_u = containers.Map('KeyType','char','ValueType','any');
-target_G_map_w = containers.Map('KeyType','char','ValueType','any');
-target_g_map = containers.Map('KeyType','char','ValueType','any');
+AxMap = containers.Map('KeyType','char','ValueType','any');
+AuMap = containers.Map('KeyType','char','ValueType','any');
+AwMap = containers.Map('KeyType','char','ValueType','any');
+bMap = containers.Map('KeyType','char','ValueType','any');
 
 % We define these constraints for all lengths of sequences from 1 to N
 for t = 1:(horizon+1)
@@ -42,77 +43,77 @@ for t = 1:(horizon+1)
         seq = len_sequences{j};
 
         if t == horizon+1
-            Gx = sys.Xterm.A;
-            Gu = zeros(size(Gx,1),horizon*m);
-            g = sys.Xterm.b;
+            Ax = [sys.Xterm.A; sys.Xterm.Ae; -sys.Xterm.Ae];
+            Au = zeros(size(Ax,1),horizon*m);
+            b = [sys.Xterm.b; sys.Xterm.be; -sys.Xterm.be];
         else
-            Gx = sys.XUmap{t}.A(:,1:n);
-            Gu = [zeros(size(Gx,1), (t-1)*m),  sys.XUmap{t}.A(:,n+(1:m)), zeros(size(Gx,1), (horizon-t)*m)];
-            g = sys.XUmap{t}.b;
+            Ax = [sys.XUmap{t}.A(:,1:n); sys.XUmap{t}.Ae(:,1:n); -sys.XUmap{t}.Ae(:,1:n)];
+            Au = [zeros(size(Ax,1), (t-1)*m), ...
+                [sys.XUmap{t}.A(:,n+(1:m)); sys.XUmap{t}.Ae(:,n+(1:m)); -sys.XUmap{t}.Ae(:,n+(1:m))], ...
+                zeros(size(Ax,1), (horizon-t)*m)];
+            b = [sys.XUmap{t}.b; sys.XUmap{t}.be; -sys.XUmap{t}.be];
         end
         
-        Gbx = Gx * sys.getSequenceA(seq);
-
-        Gbu = cell(1,horizon);
-        Gbw = cell(1,horizon);
-
+        Ax_dyn = Ax * sys.getSequenceA(seq);
+        Au_dyn = cell(1,horizon);
+        Aw_dyn = cell(1,horizon);
+        
         modes = LTVSSys.getModesFromSequence(seq);
         for i = 1:length(modes)
             mode = modes(i);
             suffix = LTVSSys.getSequenceFromModes(modes(i+1:end));
-            Gbu{i} = Gx * sys.getSequenceA(suffix) * sys.Bmap{mode};
-            Gbw{i} = Gx * sys.getSequenceA(suffix) * sys.Emap{mode};
+            Au_dyn{i} = Ax * sys.getSequenceA(suffix) * sys.Bmap{mode};
+            Aw_dyn{i} = Ax * sys.getSequenceA(suffix) * sys.Emap{mode};
         end
         for i = (length(modes)+1):horizon
-            Gbu{i} = Gx * zeros(n,m);
-            Gbw{i} = Gx * zeros(n,l);
+            Au_dyn{i} = Ax * zeros(n,m);
+            Aw_dyn{i} = Ax * zeros(n,l);
         end
-        Gbu = Gu + cell2mat(Gbu);
-        Gbw = cell2mat(Gbw);
+        Au_dyn = Au + cell2mat(Au_dyn);
+        Aw_dyn = cell2mat(Aw_dyn);
         
-        target_G_map_x(seq) = Gbx;
-        target_G_map_u(seq) = Gbu;
-        target_G_map_w(seq) = Gbw;
-        target_g_map(seq) = g - Gx * sys.getSequencef(seq);
+        AxMap(seq) = Ax_dyn;
+        AuMap(seq) = Au_dyn;
+        AwMap(seq) = Aw_dyn;
+        bMap(seq) = b - Ax * sys.getSequencef(seq);
     end
 end
 
 % For each switching sequence of full length we add appropriate constraints
 total_sequences = sys.sequences{1,horizon+1};
-Gxmap = containers.Map('KeyType','char','ValueType','any');
-Gumap = containers.Map('KeyType','char','ValueType','any');
-Gwmap = containers.Map('KeyType','char','ValueType','any');
-gmap = containers.Map('KeyType','char','ValueType','any');
+AxMapTotal = containers.Map('KeyType','char','ValueType','any');
+AuMapTotal = containers.Map('KeyType','char','ValueType','any');
+AwMapTotal = containers.Map('KeyType','char','ValueType','any');
+bMapTotal = containers.Map('KeyType','char','ValueType','any');
 for j = 1:size(total_sequences, 1)
 
     sequence = total_sequences{j};
     
     % We build the constraint matrices in block form
-    target_G_x = cell(horizon+1,1);
-    target_G_u = cell(horizon+1,1);
-    target_G_w = cell(horizon+1,1);
-    target_g = cell(horizon+1,1);
+    AxTotal = cell(horizon+1,1);
+    AuTotal = cell(horizon+1,1);
+    AwTotal = cell(horizon+1,1);
+    bTotal = cell(horizon+1,1);
     
     modes = LTVSSys.getModesFromSequence(sequence);
     
     for t = 1:(horizon+1)
         prefix = LTVSSys.getSequenceFromModes(modes(1:(t-1)));
-        target_G_x{t} = target_G_map_x(prefix);
-        target_G_u{t} = target_G_map_u(prefix);
-        target_G_w{t} = target_G_map_w(prefix);
-        target_g{t} = target_g_map(prefix);
+        AxTotal{t} = AxMap(prefix);
+        AuTotal{t} = AuMap(prefix);
+        AwTotal{t} = AwMap(prefix);
+        bTotal{t} = bMap(prefix);
     end
-    Gxmap(sequence) = cell2mat(target_G_x);
-    Gumap(sequence) = cell2mat(target_G_u);
-    Gwmap(sequence) = cell2mat(target_G_w);
-    gmap(sequence) = cell2mat(target_g);
-    
+    AxMapTotal(sequence) = cell2mat(AxTotal);
+    AuMapTotal(sequence) = cell2mat(AuTotal);
+    AwMapTotal(sequence) = cell2mat(AwTotal);
+    bMapTotal(sequence) = cell2mat(bTotal);
 end
 
-at.Gxmap = Gxmap;
-at.Gumap = Gumap;
-at.Gwmap = Gwmap;
-at.gmap = gmap;
+at.AxMap = AxMapTotal;
+at.AuMap = AuMapTotal;
+at.AwMap = AwMapTotal;
+at.bMap = bMapTotal;
 at.horizon = horizon;
 
 end

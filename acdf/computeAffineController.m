@@ -72,18 +72,15 @@ for j = 1:size(total_sequences, 1)
         uc_inst(m * (t-1) + (1:m), :) = uc_map(prefix);
     end
     
-    Gx = admissibleTrajectories.Gxmap(sequence);
-    Gu = admissibleTrajectories.Gumap(sequence);
-    Gw = admissibleTrajectories.Gwmap(sequence);
-    g = admissibleTrajectories.gmap(sequence);
-    
-    gu_offset = Gu * uc_inst;
-    
+    Gx = admissibleTrajectories.AxMap(sequence);
+    Gu = admissibleTrajectories.AuMap(sequence);
+    Gw = admissibleTrajectories.AwMap(sequence);
+    g = admissibleTrajectories.bMap(sequence);
     
     % These quantities define the polytop Omega x W^N = {z | Hbar * z <= hbar}
-    Hbar = initialConditions.Hmap(sequence);
-    hbar = initialConditions.hmap(sequence);
-    
+    initPoly = initialConditions.initPolyMap(sequence);
+    Hbar = [initPoly.A; initPoly.Ae; -initPoly.Ae];
+    hbar = [initPoly.b; initPoly.be; -initPoly.be];
     
     T = sdpvar(size(Gx,1),  size(Hbar,1), 'full');   
     
@@ -91,7 +88,7 @@ for j = 1:size(total_sequences, 1)
     % existing list
     constraints = [constraints;
         T*Hbar == [Gx + Gu * Kx_inst, Gu * Kw_inst + Gw];
-        T*hbar <= g - gu_offset;
+        T*hbar <= g - Gu * uc_inst;
         T >= 0;
     ];
 end
