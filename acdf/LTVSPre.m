@@ -7,27 +7,28 @@ for mode = 1:sys.ns
     if isempty(W)
         continue;
     end
-    s = s & regularpre(target,  sys.XUmap{t}, W, ...
+    s = s & linearPre(target,  sys.XUmap{t}, W, ...
                         sys.Amap{mode},  sys.Bmap{mode}, sys.Emap{mode}, ...
                         sys.fmap{mode});
 end
 
 end
 
-function [pre_s] = regularpre(target, XU, W, A, B, E, f)
-%regularpre Compute the pre in the linear system
+function [pre_s] = linearPre(target, XU, W, A, B, E, f)
+%linearPre Compute the pre in the linear system
 
 d = computeDisturbanceOffsets(target, W, E);
 
-As = target.A;
-bs = target.b;
+As = [target.A; target.Ae; -target.Ae];
+bs = [target.b; target.be; -target.be];
 
 n = size(A,1);
 
 H = [As * A, As * B, bs + d - As * f;
      XU.H];
+He = XU.He;
 
-lift_pre_s = Polyhedron('H', H);
+lift_pre_s = Polyhedron('H', H, 'He', He);
 pre_s = lift_pre_s.projection(1:n);
 
 end
@@ -43,9 +44,8 @@ function [d] = computeDisturbanceOffsets(target, W, E)
 %
 %   d - disturbance offset
 
-TA = target.A;
-WA = W.A;
-Wb = W.b;
+TA = [target.A; target.Ae; -target.Ae];
+%Tb = [target.be; target.be; -target.be];
 
 %size(TA)
 %size(E)
@@ -58,7 +58,7 @@ w = sdpvar(size(E,2),1,'full');
 
 objective = -TA * E * w;
 
-constraints = (WA * w <= Wb);
+constraints = [W.A * w <= W.b, W.Ae * w == W.be];
 
 options = sdpsettings('solver', 'gurobi', 'verbose', 0);
 

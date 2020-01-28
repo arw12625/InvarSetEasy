@@ -8,17 +8,17 @@
 % u - input
 % w - disturbance
 % x(t+1) = A x(t) + B u(t) + E w(t) + f
-A = kron([1,1;0,1],eye(2));
-B = kron([0;1],eye(2));
-E = kron([0;1],eye(2));
-f = [0;0;0;0];
+A = [1,1;0,0];
+B = eye(2);
+E = eye(2);
+f = [0;0];
 
 % System constraints as polyhedra
-Xsafe = Polyhedron.unitBox(4);
-Usafe = Polyhedron.unitBox(2);
+Xsafe = Polyhedron.unitBox(2) & Polyhedron('Ae',[1,0],'be',0);
+Usafe = Polyhedron.unitBox(2) & Polyhedron('Ae',[0,1],'be',0);
 XU = Xsafe * Usafe;
 Xterm = Xsafe;
-W = 0.25 * Polyhedron.unitBox(2) & Polyhedron('Ae',[1,1],'be',0);
+W = 0.25 * Polyhedron.unitBox(2) & Polyhedron('Ae',[1,0],'be',0);
 
 % The horizon considered
 T = 6;
@@ -31,7 +31,7 @@ sys = LTVSSys.constructLTISys(T,A,B,E,f,XU,Xterm,W);
 %% Invariant set computations
 
 % The seed set used for computation
-Omega = ((0.4* Polyhedron.unitBox(2)) * (0.4 * Polyhedron.unitBox(2)));
+Omega = (0.4* Polyhedron.unitBox(2)) & Xsafe;
 
 % Determine if there is an affine disturbance feedback controller that can
 % drive the system starting in Omega into Omega in exactly T steps subject
