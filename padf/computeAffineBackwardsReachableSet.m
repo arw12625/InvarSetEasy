@@ -1,24 +1,35 @@
-function [constraints, x0,lambda,x0_c,Kw_maps,uc_maps] = computeAffineBackwardsReachableSet(base_sys, target)
-% computePreUnion computes the convex hull of the union of the sets produced by iteratively
-% applying the pre operator to the target set for the given number of steps
+function [constraints, x0,lambda,x0_c,Kw_maps,uc_maps] = computeAffineBackwardsReachableSet(base_sys, target, horizons)
+% computeAffineBackwardsReachableSet computes a set of states that can
+% reach the target set over the specified horizons. This set is the convex 
+% hull of the states that reach the target using affine disturbance
+% feedback for a fixed horizon. The set is specified by yalmip constraints
+% with the appropriate variables given.
 %
 %
-% sys - the LTVSSys representing system dynamics
-% target - the polyhedron to apply pre to
-% steps - the number of iterations of pre to apply
-% last_time - an optional argument specifying the time in a time-varying
-%    system to start applying pre.
+% base_sys - the LTVSSys representing system dynamics
+% target - the target polyhedron
+% horizons - the backwards horizons to consider for backwards reachability
 %
-% pre_union - the polyhedron that results from the iterated pre
+% constraints - Yalmip linear constraints specifying the set
+% x0 - decision variable representing a point in the set
+% lambda - the convex weights in the hull
+% x0_c - the points that x0 is a combination of
+% Kw_maps - the disturbance feedback gains used for each horizon
+% uc_maps - the open loop control used for each horizon
 %
 %
+
+if nargin == 2
+    horizons = 1:base_sys.T;
+end
 
 if ~(target <= base_sys.Xterm)
     disp('Target set for pre union not contained in terminal set');
 end
 
-Kw_maps = cell(base_sys.T,1);
-uc_maps = cell(base_sys.T,1);
+num_times = length(horizons);
+Kw_maps = cell(num_times,1);
+uc_maps = cell(num_times,1);
 
 n = base_sys.n;
 m = base_sys.m;
@@ -29,13 +40,15 @@ yalmip('clear')
 constraints = [];
 
 x0 = sdpvar(n,1);
-lambda = sdpvar(base_sys.T,1);
-x0_c = sdpvar(n,base_sys.T);
+lambda = sdpvar(num_times, 1);
+x0_c = sdpvar(n, num_times);
 constraints = [sum(lambda) == 1, lambda >= 0, x0 == sum(x0_c,2)];
 
-for start_time = 1:base_sys.T
+for times_index = 1:num_times
     
-    horizon = base_sys.T - start_time + 1;
+    horizon = horizons(times_index);
+    start_time = base_sys.T - horizon + 1;
+    
     sys = LTVSSys.constructTruncatedSystem(base_sys,start_time,horizon, target);
     
     initialConditions = computeInitialConditions(sys, sys.T);
@@ -60,8 +73,8 @@ for start_time = 1:base_sys.T
             uc_map(seq) = uc;
         end
     end
-    Kw_maps{start_time} = Kw_map;
-    uc_maps{start_time} = uc_map;
+    Kw_maps{times_index} = Kw_map;
+    uc_maps{times_index} = uc_map;
 
 
     % For each switching sequence of full length we add appropriate constraints
@@ -98,8 +111,8 @@ for start_time = 1:base_sys.T
         % we add the polytope inclusion constraints for this sequence to our
         % existing list
         constraints = [constraints;
-            T*Hbar == Gu * Kw_inst + Gw * lambda(start_time);
-            T*hbar <= lambda(start_time) * g - Gu * uc_inst - Gx * x0_c(:,start_time);
+            T*Hbar == Gu * Kw_inst + Gw * lambda(times_index);
+            T*hbar <= lambda(times_index) * g - Gu * uc_inst - Gx * x0_c(:,times_index);
             T >= 0;
         ];
     end

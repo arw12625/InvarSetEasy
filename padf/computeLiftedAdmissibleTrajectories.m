@@ -49,8 +49,8 @@ for t = 1:(horizon+1)
         else
             Ax = [sys.XUmap{t}.A(:,1:n); sys.XUmap{t}.Ae(:,1:n); -sys.XUmap{t}.Ae(:,1:n)];
             Au = [zeros(size(Ax,1), (t-1)*m), ...
-                [sys.XUmap{t}.A(:,n+(1:m)); sys.XUmap{t}.Ae(:,n+(1:m)); -sys.XUmap{t}.Ae(:,n+(1:m))], ...
-                zeros(size(Ax,1), (horizon-t)*m)];
+                 [sys.XUmap{t}.A(:,n+(1:m)); sys.XUmap{t}.Ae(:,n+(1:m)); -sys.XUmap{t}.Ae(:,n+(1:m))], ...
+                  zeros(size(Ax,1), (horizon-t)*m)];
             b = [sys.XUmap{t}.b; sys.XUmap{t}.be; -sys.XUmap{t}.be];
         end
         
