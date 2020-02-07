@@ -31,10 +31,10 @@ l = sys.l;
 % The following variables define maps from partial sequences to the
 % constraint matrices/vectors. They are initialized with the constraint
 % corresponding to the empty string ''.
-AxMap = containers.Map('KeyType','char','ValueType','any');
-AuMap = containers.Map('KeyType','char','ValueType','any');
-AwMap = containers.Map('KeyType','char','ValueType','any');
-bMap = containers.Map('KeyType','char','ValueType','any');
+Ax_map = containers.Map('KeyType','char','ValueType','any');
+Au_map = containers.Map('KeyType','char','ValueType','any');
+Aw_map = containers.Map('KeyType','char','ValueType','any');
+b_map = containers.Map('KeyType','char','ValueType','any');
 
 % We define these constraints for all lengths of sequences from 1 to N
 for t = 1:(horizon+1)
@@ -72,19 +72,19 @@ for t = 1:(horizon+1)
         Au_dyn = Au + cell2mat(Au_dyn);
         Aw_dyn = cell2mat(Aw_dyn);
         
-        AxMap(seq) = Ax_dyn;
-        AuMap(seq) = Au_dyn;
-        AwMap(seq) = Aw_dyn;
-        bMap(seq) = b - Ax * sys.getSequencef(seq);
+        Ax_map(seq) = Ax_dyn;
+        Au_map(seq) = Au_dyn;
+        Aw_map(seq) = Aw_dyn;
+        b_map(seq) = b - Ax * sys.getSequencef(seq);
     end
 end
 
 % For each switching sequence of full length we add appropriate constraints
 total_sequences = sys.sequences{1,horizon+1};
-AxMapTotal = containers.Map('KeyType','char','ValueType','any');
-AuMapTotal = containers.Map('KeyType','char','ValueType','any');
-AwMapTotal = containers.Map('KeyType','char','ValueType','any');
-bMapTotal = containers.Map('KeyType','char','ValueType','any');
+Ax_mapTotal = containers.Map('KeyType','char','ValueType','any');
+Au_mapTotal = containers.Map('KeyType','char','ValueType','any');
+Aw_mapTotal = containers.Map('KeyType','char','ValueType','any');
+b_mapTotal = containers.Map('KeyType','char','ValueType','any');
 for j = 1:size(total_sequences, 1)
 
     sequence = total_sequences{j};
@@ -99,21 +99,21 @@ for j = 1:size(total_sequences, 1)
     
     for t = 1:(horizon+1)
         prefix = LTVSSys.getSequenceFromModes(modes(1:(t-1)));
-        AxTotal{t} = AxMap(prefix);
-        AuTotal{t} = AuMap(prefix);
-        AwTotal{t} = AwMap(prefix);
-        bTotal{t} = bMap(prefix);
+        AxTotal{t} = Ax_map(prefix);
+        AuTotal{t} = Au_map(prefix);
+        AwTotal{t} = Aw_map(prefix);
+        bTotal{t} = b_map(prefix);
     end
-    AxMapTotal(sequence) = cell2mat(AxTotal);
-    AuMapTotal(sequence) = cell2mat(AuTotal);
-    AwMapTotal(sequence) = cell2mat(AwTotal);
-    bMapTotal(sequence) = cell2mat(bTotal);
+    Ax_mapTotal(sequence) = cell2mat(AxTotal);
+    Au_mapTotal(sequence) = cell2mat(AuTotal);
+    Aw_mapTotal(sequence) = cell2mat(AwTotal);
+    b_mapTotal(sequence) = cell2mat(bTotal);
 end
 
-at.AxMap = AxMapTotal;
-at.AuMap = AuMapTotal;
-at.AwMap = AwMapTotal;
-at.bMap = bMapTotal;
+at.Ax_map = Ax_mapTotal;
+at.Au_map = Au_mapTotal;
+at.Aw_map = Aw_mapTotal;
+at.b_map = b_mapTotal;
 at.horizon = horizon;
 
 end

@@ -1,4 +1,4 @@
-function initialConditions = computeInitialConditions(sys, initialStates, horizon, includeInitState, includeDisturbance)
+function initialConditions = computeInitialConditions(sys, horizon, initialStates)
     % computeInitialConditions determines initial conditions for a system
     % given by a map from switching sequences with length given by the horizon
     % to a polyhedron of initial states and possible disturbance sequences
@@ -6,24 +6,22 @@ function initialConditions = computeInitialConditions(sys, initialStates, horizo
     %   sys - an LTVSSys representing the system
     %   initialStates - a polyhedron representing initial states
     %   horizon - the horizon for the initial conditions
-    %   includeInitState - whether or not to include the initial state
-    %   includeDisturbance - whether or not to include the disturbance
     %
     %   initialConditions is a structure mapping a switching sequence
     %   sigma to initial conditions by 
     %       initcond = { (x0,w) | H(sigma) * [x0;w] <= h(sigma) }
     %
     %
+
+includeDisturbance = 1;
+includeInitState = 0;
+if nargin == 3
+    includeInitState = 1;
+end
+
 assert(horizon <= sys.T);
 assert(horizon > 0);
 
-if nargin <= 3
-    includeInitState = 1;
-    includeDisturbance = 1;
-end
-if nargin == 4
-    includeDisturbance = 1;
-end
 
 initPolyMap = containers.Map('KeyType','char','ValueType','any');
 

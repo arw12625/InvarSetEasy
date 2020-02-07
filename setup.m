@@ -1,4 +1,5 @@
 addpath('.')
 addpath(genpath('padf'))
 addpath(genpath('util'))
+addpath(genpath('invar'))
 addpath(genpath('padf_test'))

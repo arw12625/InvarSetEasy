@@ -44,7 +44,7 @@ Omega = (0.4* Polyhedron.unitBox(1)) * (0.4 * Polyhedron.unitBox(1));
 
 % Determine all possible reachable states using this controller over the
 % horizon. If the system is recurrent, then total reach set is invariant.
-[reachMap, totalReach] = reachableSetAffineController(sys, Omega, controller);
+[reachMap, totalReach] = computeControllerForwardReachableSet(sys, Omega, controller);
 
 %%
 
@@ -52,7 +52,7 @@ Omega = (0.4* Polyhedron.unitBox(1)) * (0.4 * Polyhedron.unitBox(1));
 % (Note technically this set computes the convex hull of the union 
 % of the sets pre^i(Omega) for i = 1:T which is slightly different)
 % If the system is recurrent then this set is invariant.
-preUnion = computePreUnion(sys, Omega, T);
+preUnion = computeBackwardsReachableSet(sys, Omega, T);
 
 %%
 
@@ -80,3 +80,24 @@ for t = 1:T
     plot(reachMap(seqs{1}))
 end
 %}
+
+%%
+
+[constraints, x0,lambda,x0_c,Kw_maps,uc_maps] = computeAffineBackwardsReachableSet(sys, Omega);
+yalmipOptions = sdpsettings('verbose', 0, 'solver', ''); % options for the LP solver
+
+infeas = 0;
+for i = 1:size(outerInvar.V,2)
+    mod_con = [constraints, x0 == outerInvar.V(i,:)'];
+    diag = optimize(mod_con, [], yalmipOptions);
+    if diag.problem ~= 0
+        infeas = 1;
+        break
+    end
+end
+
+if infeas
+    disp('Affine backwards reachable set is not maximal invariant set')
+else
+    disp('Affine backwards reachable set is maximal invariant set')
+end

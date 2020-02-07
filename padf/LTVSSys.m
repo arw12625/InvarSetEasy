@@ -82,7 +82,7 @@ classdef LTVSSys < matlab.mixin.Copyable
             obj.assertValidSystem();
             
             [obj.sequences, obj.Aseq, obj.fseq] = ...
-                generateSwitchingSequences(obj.T, obj.n, obj.ns, ...
+                LTVSSys.generateSwitchingSequences(obj.T, obj.n, obj.ns, ...
                 obj.Amap, obj.fmap, obj.WSigmamap);
         end
         
@@ -122,6 +122,117 @@ classdef LTVSSys < matlab.mixin.Copyable
                 assert(nodist == 0);
             end
             assert(size(obj.Xterm.A,2) == obj.n);
+        end
+        
+        function [s] = pre(obj, target, t)
+            % pre computes the pre (predecesor) of the target set at time t
+
+            s = Polyhedron(zeros(1,obj.n), 1);
+            for mode = 1:obj.ns
+                W = obj.WSigmamap{t,mode};
+                if isempty(W)
+                    continue;
+                end
+                s = s & LTVSSys.linearPre(target,  obj.XUmap{t}, W, ...
+                                    obj.Amap{mode},  obj.Bmap{mode}, obj.Emap{mode}, ...
+                                    obj.fmap{mode});
+            end
+        end
+    end
+    
+    methods(Static, Access = private)
+
+        function [sequences, A_seq, f_seq] = generateSwitchingSequences(T,n,ns, Amap, fmap, WSigmamap)
+            % generateSwitchingSequences generates all possible switching sequences
+            % and associated transition matrices for a system.
+            %   T - horizon
+            %   n - number of states
+            %   ns - number of switching modes
+            %   Amap - cell array of A matrices indexed by switching mode
+            %   fmap - cell array of f matrices indexed by switching mode
+            %   WSigmamap - cell array of disturbance polyhedrons indexed by time
+            %      and switching mode
+            %   
+            %   sequences - cell array of list of switching sequence strings
+            %      indexed by length.
+
+            sequences = cell(T+1,T+1);
+            A_seq = containers.Map({''},{eye(n)});
+            f_seq = containers.Map({''},{zeros(n,1)});
+
+            for st = 1:T
+                sequences{st,1} = {''};
+                for lt = 1:(T-st+1)
+                    prev_sequences = sequences{st,lt};
+                    new_sequences = cell(0,0);
+                    delim = LTVSSys.getDelimiter();
+                    for j = 1:size(prev_sequences,1)
+                        seq = prev_sequences{j};
+                        for mode = 1:ns
+                            if ~isempty(WSigmamap{st+lt-1,mode}) && ~isEmptySet(WSigmamap{st+lt-1,mode})
+                                new_str =  strcat(seq,num2str(mode),delim);
+                                new_sequences = {new_sequences; new_str};
+                                if ~isKey(A_seq, new_str)
+                                    A_seq(new_str) = Amap{mode} * A_seq(seq);
+                                    f_seq(new_str) = fmap{mode} + Amap{mode} * f_seq(seq);
+                                end
+                            end
+                        end
+                    end
+                    sequences{st,lt+1} = new_sequences(2:end);
+                end
+            end
+
+        end
+        
+        function [pre_s] = linearPre(target, XU, W, A, B, E, f)
+            %linearPre Compute the pre in the linear system
+
+            d = LTVSSys.computeDisturbanceOffsets(target, W, E);
+            As = [target.A; target.Ae; -target.Ae];
+            bs = [target.b; target.be; -target.be];
+            n = size(A,1);
+            H = [As * A, As * B, bs + d - As * f;
+                 XU.H];
+            He = XU.He;
+
+            lift_pre_s = Polyhedron('H', H, 'He', He);
+            pre_s = lift_pre_s.projection(1:n);
+
+        end
+
+
+        function [d] = computeDisturbanceOffsets(target, W, E)
+            % computeDisturbanceOffsets Computes the halfspace offsets that represent
+            % the effect of the disturbance upon Pre operation
+            %   target - polyhedron to compute pre of
+            %   W - polyhedron of disturbances
+            %   
+            %   dynamics given by x(t+1) = A * x(t) + B * u(t) + E * w(t) + f
+            %
+            %   d - disturbance offset
+
+            TA = [target.A; target.Ae; -target.Ae];
+            %Tb = [target.be; target.be; -target.be];
+
+            %size(TA)
+            %size(E)
+            if sum(sum(abs(-TA * E))) == 0
+                d = zeros(size(TA,1), 1);
+                return;
+            end
+
+            w = sdpvar(size(E,2),1,'full');
+            objective = -TA * E * w;
+            constraints = [W.A * w <= W.b, W.Ae * w == W.be];
+            options = sdpsettings('solver', 'gurobi', 'verbose', 0);
+            diagnostics = optimize(constraints, objective, options);
+
+            d = zeros(size(TA,1),1);
+            for i = 1:size(TA,1)
+                selectsolution(i);
+                d(i) = value(objective(i));
+            end
         end
     end
     

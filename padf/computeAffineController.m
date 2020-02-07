@@ -72,10 +72,10 @@ for j = 1:size(total_sequences, 1)
         uc_inst(m * (t-1) + (1:m), :) = uc_map(prefix);
     end
     
-    Gx = admissibleTrajectories.AxMap(sequence);
-    Gu = admissibleTrajectories.AuMap(sequence);
-    Gw = admissibleTrajectories.AwMap(sequence);
-    g = admissibleTrajectories.bMap(sequence);
+    Gx = admissibleTrajectories.Ax_map(sequence);
+    Gu = admissibleTrajectories.Au_map(sequence);
+    Gw = admissibleTrajectories.Aw_map(sequence);
+    g = admissibleTrajectories.b_map(sequence);
     
     % These quantities define the polytop Omega x W^N = {z | Hbar * z <= hbar}
     initPoly = initialConditions.initPolyMap(sequence);
