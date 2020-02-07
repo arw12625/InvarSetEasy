@@ -1,4 +1,4 @@
 addpath('.')
-addpath(genpath('acdf_test'))
+addpath(genpath('padf'))
 addpath(genpath('util'))
-addpath(genpath('acdf'))
+addpath(genpath('padf_test'))
