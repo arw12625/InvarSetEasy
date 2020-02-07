@@ -25,7 +25,7 @@ for st = 1:T
         for j = 1:size(prev_sequences,1)
             seq = prev_sequences{j};
             for mode = 1:ns
-                if ~isempty(WSigmamap{st+lt-1,mode})
+                if ~isempty(WSigmamap{st+lt-1,mode}) && ~isEmptySet(WSigmamap{st+lt-1,mode})
                     new_str =  strcat(seq,num2str(mode),delim);
                     new_sequences = {new_sequences; new_str};
                     if ~isKey(A_seq, new_str)

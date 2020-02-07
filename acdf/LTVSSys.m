@@ -152,6 +152,11 @@ classdef LTVSSys < matlab.mixin.Copyable
             modes = str2num(seq);
         end
         
+        function len = getSequenceLength(seq)
+            %get the number of modes in a sequence
+            len = length(str2num(seq));
+        end
+        
         function sys = constructLTISys(T,A,B,E,f,XU,Xterm,W)
             % construct an LTVSSys representing an LTI system
             %   A,B,E,f - matrices
@@ -181,6 +186,28 @@ classdef LTVSSys < matlab.mixin.Copyable
             sys = LTVSSys(T,Amap,Bmap,Emap,fmap,XUmap,Xterm,WSigmamap);
 
         end
+        
+        function seq_sys = constructLTVSysFromSeq(sys, seq, start_time, Xterm)
+            
+            T = LTVSSys.getSequenceLength(seq);
+            modes = LTVSSys.getModesFromSequence(seq);
+            
+            WSigmamap = cell(T,sys.ns);
+            for i = 1:T
+                WSigmamap{i,modes(i)} = sys.WSigmamap{start_time+i,modes(i)};
+            end
+            
+            seq_sys = LTVSSys(T,sys.Amap,sys.Bmap,sys.Emap,sys.fmap,sys.XUmap(start_time:start_time+T-1),Xterm,WSigmamap);
+            
+        end
+        
+        function trunc_sys = constructTruncatedSystem(sys,start_time,T, Xterm)
+            
+            time_range = start_time+(1:T)-1;
+            trunc_sys = LTVSSys(T,sys.Amap,sys.Bmap,sys.Emap,sys.fmap,sys.XUmap(time_range),Xterm,sys.WSigmamap(time_range));
+            
+        end
+        
     end
 end
 

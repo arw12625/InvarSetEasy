@@ -21,6 +21,7 @@ end
 
 t = last_time;
 for i = 1:steps
+    i
     s = LTVSPre(sys, s, t);
     preSets(end+1) = s;
     t = t - 1;
