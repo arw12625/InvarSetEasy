@@ -39,9 +39,8 @@ b_map = containers.Map('KeyType','char','ValueType','any');
 % We define these constraints for all lengths of sequences from 1 to N
 for t = 1:(horizon+1)
     len_sequences = sys.sequences{1,t};
-    for j = length(len_sequences)
+    for j = 1:length(len_sequences)
         seq = len_sequences{j};
-
         if t == horizon+1
             Ax = [sys.Xterm.A; sys.Xterm.Ae; -sys.Xterm.Ae];
             Au = zeros(size(Ax,1),horizon*m);
@@ -85,7 +84,7 @@ Ax_mapTotal = containers.Map('KeyType','char','ValueType','any');
 Au_mapTotal = containers.Map('KeyType','char','ValueType','any');
 Aw_mapTotal = containers.Map('KeyType','char','ValueType','any');
 b_mapTotal = containers.Map('KeyType','char','ValueType','any');
-for j = 1:size(total_sequences, 1)
+for j = 1:length(total_sequences)
 
     sequence = total_sequences{j};
     

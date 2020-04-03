@@ -18,7 +18,7 @@ Xsafe = (1 * Polyhedron.unitBox(1)) * (1 * Polyhedron.unitBox(1));
 Usafe = Polyhedron.unitBox(1);
 XU = Xsafe * Usafe;
 Xterm = Xsafe;
-W = 0.25 * Polyhedron.unitBox(1);
+W = 0.0025 * Polyhedron.unitBox(1);
 
 % The horizon considered
 T = 6;

@@ -12,10 +12,11 @@ function [isRecurrent, affineController] = testAffineRecurrence(sys,initTargetSe
     
     initialConditions = computeInitialConditions(csys, horizon, initTargetSet);
     admissibleTrajectories = computeLiftedAdmissibleTrajectories(csys, horizon);
-    
-    yalmipOptions = sdpsettings('verbose', 1, 'solver', ''); % options for the LP solver
+    2
+    yalmipOptions = sdpsettings('verbose', 2, 'solver', 'gurobi'); % options for the LP solver
+    tic
     [diagnostics, affineController] = computeAffineController(csys, initialConditions, admissibleTrajectories, yalmipOptions);
-    
+    toc
     diagnostics
     if diagnostics.problem == 0
         isRecurrent = 1;

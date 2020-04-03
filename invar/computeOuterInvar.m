@@ -23,6 +23,8 @@ end
 
 t = last_time;
 for i = 1:steps
+    i
+    s.minHRep;
     s = s & sys.pre(s, t);
     t = t - 1;
     if t < 1

@@ -37,7 +37,7 @@ Kw_map = containers.Map('KeyType','char','ValueType','any');
 uc_map = containers.Map('KeyType','char','ValueType','any');
 for i = 1:horizon
     len_sequences = sys.sequences{1,i};
-    for j = 1:size(len_sequences, 1)
+    for j = 1:length(len_sequences)
         seq = len_sequences{j};
         Kx = sdpvar(m, n, 'full');
         Kx_map(seq) = Kx;
@@ -49,12 +49,11 @@ for i = 1:horizon
         uc_map(seq) = ux;
     end
 end
-
-
+3
 % For each switching sequence of full length we add appropriate constraints
 total_sequences = sys.sequences{1,horizon+1};
-for j = 1:size(total_sequences, 1)
-
+for j = 1:length(total_sequences)
+    j
     sequence = total_sequences{j};
     modes = LTVSSys.getModesFromSequence(sequence);
     
@@ -71,7 +70,7 @@ for j = 1:size(total_sequences, 1)
         Kw_inst(m * (t-1) + (1:m), :) = Kw_map(prefix);
         uc_inst(m * (t-1) + (1:m), :) = uc_map(prefix);
     end
-    
+
     Gx = admissibleTrajectories.Ax_map(sequence);
     Gu = admissibleTrajectories.Au_map(sequence);
     Gw = admissibleTrajectories.Aw_map(sequence);
@@ -92,7 +91,7 @@ for j = 1:size(total_sequences, 1)
         T >= 0;
     ];
 end
-
+5
 % finally we solve the linear feasibility program with no objective
 diagnostics = optimize(constraints, [], yalmipOptions);
 
@@ -104,7 +103,7 @@ affineController.Kw_map = containers.Map('KeyType','char','ValueType','any');
 affineController.uc_map = containers.Map('KeyType','char','ValueType','any');
 for i = 1:horizon
     len_sequences = sys.sequences{1,i};
-    for j = 1:size(len_sequences, 1)
+    for j = 1:length(len_sequences)
         seq = len_sequences{j};
         affineController.Kx_map(seq) = value(Kx_map(seq));
         affineController.Kw_map(seq) = value(Kw_map(seq));

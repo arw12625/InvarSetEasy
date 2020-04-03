@@ -26,7 +26,7 @@ assert(horizon > 0);
 initPolyMap = containers.Map('KeyType','char','ValueType','any');
 
 total_sequences = sys.sequences{1,horizon+1};
-for j = 1:size(total_sequences, 1)
+for j = 1:length(total_sequences)
 
     sequence = total_sequences{j};
     modes = LTVSSys.getModesFromSequence(sequence);

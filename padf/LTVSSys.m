@@ -60,7 +60,7 @@ classdef LTVSSys < matlab.mixin.Copyable
             obj.Emap = Emap;
             obj.fmap = fmap;
             
-            obj.ns = length(Amap(1,:));
+            obj.ns = size(Amap(:),1);
             
             % find possible first mode
             pos_mode = 0;
@@ -84,6 +84,7 @@ classdef LTVSSys < matlab.mixin.Copyable
             [obj.sequences, obj.Aseq, obj.fseq] = ...
                 LTVSSys.generateSwitchingSequences(obj.T, obj.n, obj.ns, ...
                 obj.Amap, obj.fmap, obj.WSigmamap);
+            
         end
         
         function Am = getSequenceA(obj, seq)
@@ -166,12 +167,16 @@ classdef LTVSSys < matlab.mixin.Copyable
                     prev_sequences = sequences{st,lt};
                     new_sequences = cell(0,0);
                     delim = LTVSSys.getDelimiter();
-                    for j = 1:size(prev_sequences,1)
+                    for j = 1:size(prev_sequences,2)
                         seq = prev_sequences{j};
                         for mode = 1:ns
                             if ~isempty(WSigmamap{st+lt-1,mode}) && ~isEmptySet(WSigmamap{st+lt-1,mode})
                                 new_str =  strcat(seq,num2str(mode),delim);
-                                new_sequences = {new_sequences; new_str};
+                                if isempty(new_sequences)
+                                    new_sequences = {new_str};
+                                else
+                                    new_sequences{end+1} = new_str;
+                                end
                                 if ~isKey(A_seq, new_str)
                                     A_seq(new_str) = Amap{mode} * A_seq(seq);
                                     f_seq(new_str) = fmap{mode} + Amap{mode} * f_seq(seq);
@@ -179,7 +184,7 @@ classdef LTVSSys < matlab.mixin.Copyable
                             end
                         end
                     end
-                    sequences{st,lt+1} = new_sequences(2:end);
+                    sequences{st,lt+1} = new_sequences;
                 end
             end
 
@@ -315,7 +320,7 @@ classdef LTVSSys < matlab.mixin.Copyable
         function trunc_sys = constructTruncatedSystem(sys,start_time,T, Xterm)
             
             time_range = start_time+(1:T)-1;
-            trunc_sys = LTVSSys(T,sys.Amap,sys.Bmap,sys.Emap,sys.fmap,sys.XUmap(time_range),Xterm,sys.WSigmamap(time_range));
+            trunc_sys = LTVSSys(T,sys.Amap,sys.Bmap,sys.Emap,sys.fmap,sys.XUmap(time_range),Xterm,sys.WSigmamap(time_range,:));
             
         end
         
